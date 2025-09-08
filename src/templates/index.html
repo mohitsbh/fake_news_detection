@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-5">
+            <h1>Fake News Detector</h1>
+            <p class="lead">Analyze news articles to determine if they are real or fake</p>
+        </header>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="input-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-input" type="button" role="tab" aria-controls="text-input" aria-selected="true">Text Input</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-input" type="button" role="tab" aria-controls="url-input" aria-selected="false">URL Input</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="input-tab-content">
+                            <!-- Text Input Tab -->
+                            <div class="tab-pane fade show active" id="text-input" role="tabpanel" aria-labelledby="text-tab">
+                                <form id="text-form">
+                                    <div class="mb-3">
+                                        <label for="news-title" class="form-label">News Title (Optional)</label>
+                                        <input type="text" class="form-control" id="news-title" placeholder="Enter the title of the news article">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="news-text" class="form-label">News Text</label>
+                                        <textarea class="form-control" id="news-text" rows="10" placeholder="Paste the full text of the news article here" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Analyze</button>
+                                </form>
+                            </div>
+                            
+                            <!-- URL Input Tab -->
+                            <div class="tab-pane fade" id="url-input" role="tabpanel" aria-labelledby="url-tab">
+                                <form id="url-form">
+                                    <div class="mb-3">
+                                        <label for="news-url" class="form-label">News URL</label>
+                                        <input type="url" class="form-control" id="news-url" placeholder="Enter the URL of the news article" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Analyze</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Spinner -->
+                <div id="loading" class="text-center my-4 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Analyzing... This may take a moment.</p>
+                </div>
+                
+                <!-- Results Section -->
+                <div id="results" class="my-4 d-none">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Analysis Results</h5>
+                            <span id="result-badge" class="badge"></span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h2 id="prediction-text"></h2>
+                                        <div class="progress">
+                                            <div id="prediction-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <p class="mt-2">Confidence: <span id="confidence-text"></span></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <h5>Explanation</h5>
+                                    <p id="explanation-text"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Linguistic Analysis</h5>
+                                    <div class="accordion" id="linguistic-accordion">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="fake-markers-heading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fake-markers-collapse" aria-expanded="false" aria-controls="fake-markers-collapse">
+                                                    Potential Fake News Markers
+                                                </button>
+                                            </h2>
+                                            <div id="fake-markers-collapse" class="accordion-collapse collapse" aria-labelledby="fake-markers-heading" data-bs-parent="#linguistic-accordion">
+                                                <div class="accordion-body" id="fake-markers-content">
+                                                    <!-- Content will be inserted here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="real-markers-heading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#real-markers-collapse" aria-expanded="false" aria-controls="real-markers-collapse">
+                                                    Credibility Indicators
+                                                </button>
+                                            </h2>
+                                            <div id="real-markers-collapse" class="accordion-collapse collapse" aria-labelledby="real-markers-heading" data-bs-parent="#linguistic-accordion">
+                                                <div class="accordion-body" id="real-markers-content">
+                                                    <!-- Content will be inserted here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Verification Tips</h5>
+                                    <ul id="verification-tips" class="list-group">
+                                        <!-- Tips will be inserted here -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Alert -->
+                <div id="error-alert" class="alert alert-danger my-4 d-none" role="alert">
+                    <strong>Error:</strong> <span id="error-message"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="text-center py-4 mt-5 bg-light">
+        <p>Fake News Detection System</p>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+    
