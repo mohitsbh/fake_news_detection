@@ -4,71 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fake News Detector | AI-Powered News Verification</title>
-    <meta name="description" content="Verify the authenticity of news articles using our AI-powered fake news detection system">
+    <title>Fake News Detector</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <header class="text-center">
-            <h1><i class="bi bi-shield-check me-2"></i>Fake News Detector</h1>
-            <p class="lead">Advanced AI-powered system to analyze and verify news authenticity</p>
+        <header class="text-center my-5">
+            <h1>Fake News Detector</h1>
+            <p class="lead">Analyze news articles to determine if they are real or fake</p>
         </header>
         
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <div class="card main-card">
+                <div class="card">
                     <div class="card-header">
                         <ul class="nav nav-tabs card-header-tabs" id="input-tabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-input" type="button" role="tab">
-                                    <i class="bi bi-file-text me-2"></i>Text Analysis
-                                </button>
+                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-input" type="button" role="tab" aria-controls="text-input" aria-selected="true">Text Input</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-input" type="button" role="tab">
-                                    <i class="bi bi-link-45deg me-2"></i>URL Analysis
-                                </button>
+                                <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-input" type="button" role="tab" aria-controls="url-input" aria-selected="false">URL Input</button>
                             </li>
                         </ul>
                     </div>
                     <div class="card-body">
                         <div class="tab-content" id="input-tab-content">
                             <!-- Text Input Tab -->
-                            <div class="tab-pane fade show active" id="text-input" role="tabpanel">
+                            <div class="tab-pane fade show active" id="text-input" role="tabpanel" aria-labelledby="text-tab">
                                 <form id="text-form">
-                                    <div class="mb-4">
-                                        <label for="news-title" class="form-label">
-                                            <i class="bi bi-type-h1 me-2"></i>News Title (Optional)
-                                        </label>
+                                    <div class="mb-3">
+                                        <label for="news-title" class="form-label">News Title (Optional)</label>
                                         <input type="text" class="form-control" id="news-title" placeholder="Enter the title of the news article">
                                     </div>
-                                    <div class="mb-4">
-                                        <label for="news-text" class="form-label">
-                                            <i class="bi bi-justify me-2"></i>News Content
-                                        </label>
+                                    <div class="mb-3">
+                                        <label for="news-text" class="form-label">News Text</label>
                                         <textarea class="form-control" id="news-text" rows="10" placeholder="Paste the full text of the news article here" required></textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-search me-2"></i>Analyze Content
-                                    </button>
+                                    <button type="submit" class="btn btn-primary">Analyze</button>
                                 </form>
                             </div>
                             
                             <!-- URL Input Tab -->
-                            <div class="tab-pane fade" id="url-input" role="tabpanel">
+                            <div class="tab-pane fade" id="url-input" role="tabpanel" aria-labelledby="url-tab">
                                 <form id="url-form">
-                                    <div class="mb-4">
-                                        <label for="news-url" class="form-label">
-                                            <i class="bi bi-link me-2"></i>News URL
-                                        </label>
+                                    <div class="mb-3">
+                                        <label for="news-url" class="form-label">News URL</label>
                                         <input type="url" class="form-control" id="news-url" placeholder="Enter the URL of the news article" required>
                                     </div>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-search me-2"></i>Analyze URL
-                                    </button>
+                                    <button type="submit" class="btn btn-primary">Analyze</button>
                                 </form>
                             </div>
                         </div>
@@ -78,64 +62,70 @@
                 <!-- Loading Spinner -->
                 <div id="loading" class="text-center my-4 d-none">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Analyzing...</span>
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-3">Analyzing content using AI... Please wait.</p>
+                    <p>Analyzing... This may take a moment.</p>
                 </div>
                 
                 <!-- Results Section -->
                 <div id="results" class="my-4 d-none">
-                    <div class="card result-card">
+                    <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Analysis Results</h5>
+                            <h5 class="mb-0">Analysis Results</h5>
                             <span id="result-badge" class="badge"></span>
                         </div>
                         <div class="card-body">
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="text-center prediction-box">
-                                        <h2 id="prediction-text" class="mb-3"></h2>
+                                    <div class="text-center">
+                                        <h2 id="prediction-text"></h2>
                                         <div class="progress">
-                                            <div id="prediction-bar" class="progress-bar" role="progressbar"></div>
+                                            <div id="prediction-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
-                                        <p class="mt-3">Confidence Score: <span id="confidence-text" class="fw-bold"></span></p>
+                                        <p class="mt-2">Confidence: <span id="confidence-text"></span></p>
                                     </div>
                                 </div>
                                 <div class="col-md-8">
-                                    <h5><i class="bi bi-info-circle me-2"></i>Detailed Analysis</h5>
-                                    <p id="explanation-text" class="explanation"></p>
+                                    <h5>Explanation</h5>
+                                    <p id="explanation-text"></p>
                                 </div>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h5><i class="bi bi-chat-quote me-2"></i>Content Analysis</h5>
+                                    <h5>Linguistic Analysis</h5>
                                     <div class="accordion" id="linguistic-accordion">
                                         <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fake-markers-collapse">
-                                                    <i class="bi bi-exclamation-triangle me-2"></i>Potential Red Flags
+                                            <h2 class="accordion-header" id="fake-markers-heading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fake-markers-collapse" aria-expanded="false" aria-controls="fake-markers-collapse">
+                                                    Potential Fake News Markers
                                                 </button>
                                             </h2>
-                                            <div id="fake-markers-collapse" class="accordion-collapse collapse">
-                                                <div class="accordion-body" id="fake-markers-content"></div>
+                                            <div id="fake-markers-collapse" class="accordion-collapse collapse" aria-labelledby="fake-markers-heading" data-bs-parent="#linguistic-accordion">
+                                                <div class="accordion-body" id="fake-markers-content">
+                                                    <!-- Content will be inserted here -->
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#real-markers-collapse">
-                                                    <i class="bi bi-check-circle me-2"></i>Credibility Indicators
+                                            <h2 class="accordion-header" id="real-markers-heading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#real-markers-collapse" aria-expanded="false" aria-controls="real-markers-collapse">
+                                                    Credibility Indicators
                                                 </button>
                                             </h2>
-                                            <div id="real-markers-collapse" class="accordion-collapse collapse">
-                                                <div class="accordion-body" id="real-markers-content"></div>
+                                            <div id="real-markers-collapse" class="accordion-collapse collapse" aria-labelledby="real-markers-heading" data-bs-parent="#linguistic-accordion">
+                                                <div class="accordion-body" id="real-markers-content">
+                                                    <!-- Content will be inserted here -->
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <h5><i class="bi bi-lightbulb me-2"></i>Verification Guide</h5>
-                                    <ul id="verification-tips" class="list-group"></ul>
+                                    <h5>Verification Tips</h5>
+                                    <ul id="verification-tips" class="list-group">
+                                        <!-- Tips will be inserted here -->
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -144,17 +134,14 @@
                 
                 <!-- Error Alert -->
                 <div id="error-alert" class="alert alert-danger my-4 d-none" role="alert">
-                    <i class="bi bi-exclamation-circle-fill me-2"></i>
                     <strong>Error:</strong> <span id="error-message"></span>
                 </div>
             </div>
         </div>
     </div>
     
-    <footer class="text-center">
-        <div class="container">
-            <p><i class="bi bi-shield me-2"></i>Fake News Detection System | Powered by Advanced AI</p>
-        </div>
+    <footer class="text-center py-4 mt-5 bg-light">
+        <p>Fake News Detection System</p>
     </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
