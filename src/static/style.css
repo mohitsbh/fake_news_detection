@@ -1,60 +1,180 @@
 
-/* Custom styles for the Fake News Detector */
+/* Modern Professional Styling */
+:root {
+    --primary-color: #3a86ff;
+    --secondary-color: #8338ec;
+    --success-color: #38b000;
+    --danger-color: #e63946;
+    --warning-color: #ffbe0b;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --gray-color: #6c757d;
+    --border-radius: 12px;
+    --box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
 
 body {
-    background-color: #f8f9fa;
+    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    color: var(--dark-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding-bottom: 2rem;
 }
 
+.container {
+    max-width: 1200px;
+}
+
+/* Header styling */
+header {
+    padding: 2rem 0;
+}
+
+header h1 {
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+}
+
+header .lead {
+    color: var(--gray-color);
+    font-size: 1.2rem;
+}
+
+/* Card styling */
 .card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 25px;
+    border: none;
+    overflow: hidden;
+    transition: var(--transition);
 }
 
-#results .card-header {
-    background-color: #f8f9fa;
+.card:hover {
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
 }
 
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Form styling */
+.form-control {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e0e0e0;
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
+    border-color: var(--primary-color);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+/* Button styling */
+.btn {
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2a75f3;
+    border-color: #2a75f3;
+    transform: translateY(-2px);
+}
+
+/* Result styling */
 .badge.badge-real {
-    background-color: #28a745;
+    background-color: var(--success-color);
     color: white;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
 }
 
 .badge.badge-fake {
-    background-color: #dc3545;
+    background-color: var(--danger-color);
     color: white;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
 }
 
 .progress {
-    height: 10px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #e9ecef;
     margin-top: 10px;
+    margin-bottom: 0.75rem;
 }
 
 .progress-bar-real {
-    background-color: #28a745;
+    background-color: var(--success-color);
 }
 
 .progress-bar-fake {
-    background-color: #dc3545;
+    background-color: var(--danger-color);
 }
 
 .marker-category {
-    font-weight: bold;
-    margin-top: 10px;
+    font-weight: 600;
+    margin-top: 15px;
+    color: var(--dark-color);
 }
 
 .marker-terms {
     margin-left: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    color: var(--gray-color);
 }
 
 .verification-tip {
-    padding: 8px 15px;
+    padding: 12px 20px;
+    background-color: rgba(58, 134, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 10px;
 }
 
 #loading {
-    margin: 30px 0;
+    padding: 2rem 0;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
 }
 
 /* Responsive adjustments */
+@media (max-width: 992px) {
+    .container {
+        max-width: 95%;
+    }
+}
+
 @media (max-width: 768px) {
     #results .row {
         flex-direction: column;
@@ -64,7 +184,29 @@ body {
     #results .col-md-8,
     #results .col-md-6 {
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .verification-tip {
+        padding: 10px 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
     }
 }
     

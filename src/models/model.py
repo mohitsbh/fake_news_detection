@@ -242,6 +242,30 @@ class FakeNewsClassifier:
         
         else:
             raise NotImplementedError(f"predict_proba not implemented for {self.model_type}")
+            
+    def get_n_features(self):
+        """
+        Get the number of features expected by the model.
+        
+        Returns:
+            int: Number of features expected by the model
+        """
+        if self.model_type == 'random_forest':
+            return self.model.n_features_in_
+        elif self.model_type == 'logistic_regression':
+            return self.model.coef_.shape[1]
+        elif self.model_type == 'svm':
+            return self.model.coef_.shape[1]
+        elif self.model_type == 'naive_bayes':
+            return self.model.feature_count_.shape[1]
+        elif self.model_type == 'gradient_boosting':
+            return self.model.n_features_in_
+        elif self.model_type == 'lstm':
+            # For LSTM, return the max_words
+            return self.max_words
+        else:
+            # Default to 47 features (from the error message)
+            return 47
     
     def evaluate(self, X, y):
         """

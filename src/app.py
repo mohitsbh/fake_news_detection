@@ -26,9 +26,11 @@ app.config['DEBUG'] = os.getenv('FLASK_ENV', 'production') == 'development'
 @app.route('/')
 def index():
     """
-    Render the main page.
+    Render the main page with title and description.
     """
-    return render_template('index.html')
+    return render_template('index.html', 
+                          title="TruthGuard - Advanced Fake News Detection",
+                          description="AI-powered fake news detection system with real-time verification")
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -265,8 +267,11 @@ def create_templates():
         with open(template_path, 'w', encoding='utf-8') as f:
             f.write(index_html)
 
+def create_app():
+    # This function is needed for the main block
+    return app
+
 if __name__ == '__main__':
-    app = create_app()
     # Get port from environment variable for production deployment
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

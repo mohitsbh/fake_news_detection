@@ -32,8 +32,8 @@ def parse_arguments():
     
     parser.add_argument("--title", type=str, help="Title of the news article (optional)")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format")
-    parser.add_argument("--model", type=str, default="best", 
-                        help="Model to use for prediction (default: best)")
+    parser.add_argument("--model", type=str, default="random_forest", 
+                        help="Model to use for prediction (options: random_forest, logistic_regression, svm, naive_bayes, gradient_boosting, lstm; default: random_forest)")
     
     return parser.parse_args()
 

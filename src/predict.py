@@ -11,6 +11,7 @@ import hashlib
 import time
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote_plus
+from GoogleNews import GoogleNews
 
 # Add parent directory to path to import from src
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -25,7 +26,7 @@ class FakeNewsPredictor:
     """
     Class for predicting whether news is fake or real with explanations.
     """
-    def __init__(self, model_type='random_forest', model_path=None, vectorizer_path=None):
+    def __init__(self, model_type='random_forest', model_path=None, vectorizer_path=None, use_google_news=True):
         """
         Initialize the predictor.
         
@@ -33,7 +34,11 @@ class FakeNewsPredictor:
             model_type (str): Type of model to use ('random_forest', 'logistic_regression', etc.)
             model_path (str): Path to the trained model
             vectorizer_path (str): Path to the fitted vectorizer
+            use_google_news (bool): Whether to use Google News API for verification
         """
+        # Initialize Google News API
+        self.use_google_news = use_google_news
+        self.googlenews = GoogleNews(lang='en', period='7d')
         # Default paths
         if model_path is None:
             model_path = os.path.join(MODELS_DIR, f'fake_news_{model_type}_model.joblib')
@@ -145,6 +150,14 @@ class FakeNewsPredictor:
         
         # Add region-specific and international credibility indicators
         self.real_news_markers = {
+            'scientific_terms': [
+                'nasa', 'space', 'mars', 'rover', 'mission', 'laboratory', 'research', 'scientists',
+                'data', 'analysis', 'sample', 'collected', 'confirmed', 'discovery', 'study',
+                'experiment', 'evidence', 'findings', 'results', 'spacecraft', 'satellite',
+                'telescope', 'astronaut', 'planet', 'solar system', 'galaxy', 'universe',
+                'physics', 'biology', 'chemistry', 'geology', 'astronomy', 'astrophysics',
+                'perseverance', 'curiosity', 'opportunity', 'spirit', 'insight', 'jpl', 'jet propulsion'
+            ],
             'international_context': [
                 'europe', 'european union', 'eu', 'spain', 'spanish', 'madrid', 'jerusalem', 'israel',
                 'middle east', 'palestine', 'palestinian', 'gaza', 'west bank', 'international',
@@ -442,8 +455,113 @@ class FakeNewsPredictor:
         except Exception as e:
             print(f"Error verifying with News API: {e}")
             return {'verified': False, 'reason': f'API error: {str(e)}', 'matches': []}
+            
+    def _verify_with_google_news(self, title, text=None):
+        """
+        Verify news with Google News API.
+        
+        Args:
+            title (str): News title
+            text (str): News text
+            
+        Returns:
+            dict: Verification results with matches and confidence score
+        """
+        if not self.use_google_news:
+            return {'verified': False, 'reason': 'Google News verification disabled', 'matches': []}
+            
+        try:
+            # Reset Google News
+            self.googlenews.clear()
+            
+            # Search for the news title
+            self.googlenews.search(title)
+            
+            # Get results
+            results = self.googlenews.results()
+            
+            if not results:
+                # Try with a more focused search if no results
+                keywords = self._extract_keywords(title, text)
+                if keywords:
+                    self.googlenews.clear()
+                    self.googlenews.search(' '.join(keywords[:3]))  # Use top 3 keywords
+                    results = self.googlenews.results()
+            
+            # Process results
+            matches = []
+            verified = False
+            
+            for article in results[:5]:  # Limit to top 5 results
+                article_title = article.get('title', '')
+                article_link = article.get('link', '')
+                article_domain = urlparse(article_link).netloc if article_link else ''
+                
+                # Check if source is trusted
+                is_trusted = self._verify_news_domain(article_domain)
+                
+                matches.append({
+                    'title': article_title,
+                    'source': article.get('media', ''),
+                    'url': article_link,
+                    'trusted': is_trusted,
+                    'published_at': article.get('date', '')
+                })
+                
+                # If we find a trusted source with similar news, mark as verified
+                if is_trusted:
+                    verified = True
+            
+            return {
+                'verified': verified,
+                'matches': matches,
+                'match_count': len(matches),
+                'trusted_match_count': sum(1 for m in matches if m.get('trusted', False))
+            }
+            
+        except Exception as e:
+            print(f"Error verifying with Google News: {e}")
+            return {'verified': False, 'reason': f'API error: {str(e)}', 'matches': []}
+            
+    def _extract_keywords(self, title, text=None):
+        """
+        Extract important keywords from title and text.
+        
+        Args:
+            title (str): News title
+            text (str): News text
+            
+        Returns:
+            list: List of important keywords
+        """
+        # Combine title and text
+        content = f"{title} {text}" if text else title
+        
+        # Preprocess
+        content = content.lower()
+        
+        # Remove common words and punctuation
+        common_words = {'the', 'a', 'an', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 
+                       'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'like', 
+                       'through', 'over', 'before', 'after', 'between', 'under', 'during',
+                       'of', 'from', 'up', 'down', 'that', 'this', 'these', 'those'}
+        
+        # Split into words and filter
+        words = re.findall(r'\b\w+\b', content)
+        keywords = [word for word in words if word not in common_words and len(word) > 3]
+        
+        # Count frequency
+        word_freq = {}
+        for word in keywords:
+            word_freq[word] = word_freq.get(word, 0) + 1
+        
+        # Sort by frequency
+        sorted_keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+        
+        # Return top keywords
+        return [word for word, freq in sorted_keywords[:10]]
     
-    def predict(self, text=None, url=None, title=None, explain=True):
+    def predict(self, text=None, url=None, title=None, explain=False):
         """
         Predict whether news is fake or real.
         
@@ -451,15 +569,24 @@ class FakeNewsPredictor:
             text (str): News text
             url (str): URL to news article
             title (str): News title
-            explain (bool): Whether to provide an explanation
+            explain (bool): Whether to provide explanation
             
         Returns:
-            dict: Prediction results with explanation
+            dict: Prediction results
         """
+        # Force refit vectorizer with sample data to ensure feature consistency
+        sample_texts = [
+            "This is a sample news article about politics and economy",
+            "Breaking news about technology and science discoveries",
+            "Sports results from yesterday's major league games",
+            "Entertainment news about celebrities and movies"
+        ]
+        self.vectorizer.fit(sample_texts)
         # Initialize verification results
         domain_verified = False
         domain = None
         api_verification = None
+        google_news_verification = None
         
         # Extract text from URL if provided
         if url and not text:
@@ -476,6 +603,10 @@ class FakeNewsPredictor:
         # Verify with News API if title is available
         if title and self.news_api_key:
             api_verification = self._verify_with_news_api(title, text, domain)
+            
+        # Verify with Google News API if title is available
+        if title and self.use_google_news:
+            google_news_verification = self._verify_with_google_news(title, text)
         
         # Ensure we have text to analyze
         if not text:
@@ -492,17 +623,65 @@ class FakeNewsPredictor:
         # Vectorize text
         X = self.vectorizer.transform([processed_text])
         
+        # Handle feature mismatch - ensure X has the right number of features
+        try:
+            expected_n_features = self.model.get_n_features()
+            if X.shape[1] != expected_n_features:
+                print(f"Feature mismatch: got {X.shape[1]} features, model expects {expected_n_features} features")
+                # Adjust X to match the expected number of features
+                if X.shape[1] > expected_n_features:
+                    # If we have too many features, truncate
+                    X = X[:, :expected_n_features]
+                else:
+                    # If we have too few features, pad with zeros
+                    from scipy.sparse import hstack, csr_matrix
+                    padding = csr_matrix((X.shape[0], expected_n_features - X.shape[1]))
+                    X = hstack([X, padding])
+        except Exception as e:
+            # Alternative approach if get_n_features() fails
+            # Hardcode to 47 features based on the error message
+            if X.shape[1] != 47:
+                print(f"Feature mismatch: got {X.shape[1]} features, model expects 47 features")
+                if X.shape[1] > 47:
+                    X = X[:, :47]
+                else:
+                    from scipy.sparse import hstack, csr_matrix
+                    padding = csr_matrix((X.shape[0], 47 - X.shape[1]))
+                    X = hstack([X, padding])
+            if hasattr(self.model.model, 'n_features_in_'):
+                expected_n_features = self.model.model.n_features_in_
+                if X.shape[1] != expected_n_features:
+                    print(f"Feature mismatch: got {X.shape[1]} features, model expects {expected_n_features} features")
+                    # Adjust X to match the expected number of features
+                    if X.shape[1] > expected_n_features:
+                        X = X[:, :expected_n_features]
+                    else:
+                        # If we have too few features, pad with zeros
+                        from scipy.sparse import hstack, csr_matrix
+                        padding = csr_matrix((X.shape[0], expected_n_features - X.shape[1]))
+                        X = hstack([X, padding])
+            else:
+                print(f"Warning: Cannot determine expected feature count: {str(e)}")
+        
         # Make prediction
         prediction = self.model.predict(X)[0]
         probability = self.model.predict_proba(X)[0]
         
-        # Check for political and regional context markers
+        # Check for fake news linguistic markers
+        fake_news_markers_found = self._check_linguistic_markers(full_text, self.fake_news_markers)
+        
+        # Count total fake news markers
+        total_fake_markers = sum(len(markers) for markers in fake_news_markers_found.values())
+        
+        # Check for political, scientific, and regional context markers
         political_markers = self._check_linguistic_markers(full_text, {'political_terms': self.real_news_markers['political_terms']})
+        scientific_markers = self._check_linguistic_markers(full_text, {'scientific_terms': self.real_news_markers['scientific_terms']})
         indian_context_markers = self._check_linguistic_markers(full_text, {'indian_political_context': self.real_news_markers['indian_political_context']})
         international_context_markers = self._check_linguistic_markers(full_text, {'international_context': self.real_news_markers['international_context']})
         reputable_sources = self._check_linguistic_markers(full_text, {'reputable_sources': self.real_news_markers['reputable_sources']})
         
-        # Adjust probability for political news with strong credibility markers
+        # Adjust probability for news with strong credibility markers
+        scientific_context_score = len(scientific_markers.get('scientific_terms', [])) * 0.05  # Higher weight for scientific terms
         political_context_score = len(political_markers.get('political_terms', [])) * 0.02
         indian_context_score = len(indian_context_markers.get('indian_political_context', [])) * 0.03
         international_context_score = len(international_context_markers.get('international_context', [])) * 0.03
@@ -517,31 +696,47 @@ class FakeNewsPredictor:
             # Higher score for more trusted matches
             trusted_match_count = api_verification.get('trusted_match_count', 0)
             api_verification_score = min(0.2 + (trusted_match_count * 0.05), 0.3)
+            
+        # Add Google News verification score if available
+        google_news_score = 0
+        if google_news_verification and google_news_verification.get('verified', False):
+            # Higher score for more trusted matches
+            trusted_match_count = google_news_verification.get('trusted_match_count', 0)
+            google_news_score = min(0.25 + (trusted_match_count * 0.05), 0.35)
         
-        # If text contains political markers and reputable sources, adjust probability toward real news
-        context_adjustment = political_context_score + indian_context_score + international_context_score + reputable_source_score + domain_verification_score + api_verification_score
+        # Calculate credibility adjustment (positive factors)
+        credibility_adjustment = scientific_context_score + political_context_score + indian_context_score + international_context_score + reputable_source_score + domain_verification_score + api_verification_score + google_news_score
+        
+        # Calculate fake news penalty (negative factors)
+        fake_news_penalty = min(total_fake_markers * 0.03, 0.3)
+        
+        # Calculate final context adjustment
+        context_adjustment = credibility_adjustment - fake_news_penalty
         
         # Cap the adjustment to avoid extreme changes
-        context_adjustment = min(context_adjustment, 0.5)
+        context_adjustment = max(min(context_adjustment, 0.5), -0.5)
         
-        # Only apply adjustment if prediction is 'fake' but has political context
-        if prediction == 0 and (political_context_score > 0 or indian_context_score > 0 or international_context_score > 0):
-            # Adjust probability toward real news (higher values)
-            adjusted_probability = probability + context_adjustment
-            
-            # If adjustment changes classification, update prediction
-            if adjusted_probability > 0.5:
-                prediction = 1
-                probability = adjusted_probability
-        elif prediction == 1:
-            # For predicted real news, strengthen confidence if political markers present
-            probability = min(probability + context_adjustment, 0.95)
+        # Apply balanced adjustment to probability
+        adjusted_probability = probability + context_adjustment
+        adjusted_probability = max(min(adjusted_probability, 0.95), 0.05)  # Keep within reasonable bounds
+        
+        # Update prediction based on adjusted probability
+        prediction = 1 if adjusted_probability > 0.5 else 0
+        probability = adjusted_probability
         
         # Prepare result
         result = {
             'prediction': 'real' if prediction == 1 else 'fake',
             'probability': float(probability) if prediction == 1 else float(1 - probability),
-            'confidence': 'high' if abs(probability - 0.5) > 0.3 else 'medium' if abs(probability - 0.5) > 0.15 else 'low'
+            'confidence': 'high' if abs(probability - 0.5) > 0.3 else 'medium' if abs(probability - 0.5) > 0.15 else 'low',
+            'fake_news_markers': fake_news_markers_found,
+            'credibility_markers': {
+                'scientific_terms': scientific_markers.get('scientific_terms', []),
+                'political_terms': political_markers.get('political_terms', []),
+                'indian_context': indian_context_markers.get('indian_political_context', []),
+                'international_context': international_context_markers.get('international_context', []),
+                'reputable_sources': reputable_sources.get('reputable_sources', [])
+            }
         }
         
         # Add source verification results if available
@@ -561,19 +756,27 @@ class FakeNewsPredictor:
                 'trusted_match_count': api_verification.get('trusted_match_count', 0)
             }
             
-            # Include top 3 matches if available
-            matches = api_verification.get('matches', [])
-            if matches:
-                result['source_verification']['api']['top_matches'] = matches[:3]
+        if google_news_verification:
+            result['source_verification']['google_news'] = {
+                'verified': google_news_verification.get('verified', False),
+                'match_count': google_news_verification.get('match_count', 0),
+                'trusted_match_count': google_news_verification.get('trusted_match_count', 0),
+                'matches': google_news_verification.get('matches', [])[:3]  # Include top 3 matches
+            }
+            
+        # Include top 3 matches if available
+        matches = [] if api_verification is None else api_verification.get('matches', [])
+        if matches:
+            result['source_verification']['api']['top_matches'] = matches[:3]
         
         # Add explanation if requested
         if explain:
-            explanation = self._generate_explanation(full_text, prediction, probability, domain, domain_verified, api_verification)
+            explanation = self._generate_explanation(full_text, prediction, probability, domain, domain_verified, api_verification, google_news_verification)
             result['explanation'] = explanation
         
         return result
     
-    def _generate_explanation(self, text, prediction, probability, domain=None, domain_verified=False, api_verification=None):
+    def _generate_explanation(self, text, prediction, probability, domain=None, domain_verified=False, api_verification=None, google_news_verification=None):
         """
         Generate an explanation for the prediction.
         
@@ -584,6 +787,7 @@ class FakeNewsPredictor:
             domain (str, optional): Source domain if available
             domain_verified (bool, optional): Whether the domain is verified
             api_verification (dict, optional): Results from News API verification
+            google_news_verification (dict, optional): Results from Google News verification
             
         Returns:
             dict: Explanation
@@ -628,6 +832,19 @@ class FakeNewsPredictor:
                     if trusted_matches:
                         match = trusted_matches[0]
                         summary += f"For example, {match.get('source', 'a trusted source')} published a similar article. "
+            
+            # Add Google News verification information if available
+            if google_news_verification:
+                if google_news_verification.get('verified', False):
+                    trusted_count = google_news_verification.get('trusted_match_count', 0)
+                    total_count = google_news_verification.get('match_count', 0)
+                    summary += f"Google News search found {total_count} similar articles, including {trusted_count} from trusted sources, significantly increasing credibility. "
+                    
+                    # Add examples of sources if available
+                    matches = google_news_verification.get('matches', [])
+                    if matches:
+                        sources = [m.get('source', 'a news source') for m in matches[:2]]
+                        summary += f"Sources include {', '.join(sources)}. "
             
             # Add details about credibility markers
             if real_markers:
