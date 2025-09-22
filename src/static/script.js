@@ -185,29 +185,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to show results with animations 
     function showResults(data) { 
         const results = document.getElementById('results');
-        if (!results) {
-            console.error("Element with ID 'results' not found");
-            return;
-        }
-        
         results.classList.remove('d-none');
         results.classList.add('animate-slide-up');
-        
-        const errorAlert = document.getElementById('error-alert');
-        if (errorAlert) {
-            errorAlert.classList.add('d-none');
-        }
+        document.getElementById('error-alert').classList.add('d-none');
         
         // Update prediction badge and text
         const resultBadge = document.getElementById('result-badge');
         const predictionText = document.getElementById('prediction-text');
         const predictionBar = document.getElementById('prediction-bar');
         const confidenceText = document.getElementById('confidence-text');
-        
-        if (!resultBadge || !predictionText || !predictionBar || !confidenceText) {
-            console.error("One or more required elements not found in the DOM");
-            return;
-        }
         
         resultBadge.textContent = data.prediction.toUpperCase();
         resultBadge.className = 'badge ' + (data.prediction === 'real' ? 'badge-real' : 'badge-fake');
@@ -231,22 +217,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update explanation with typing effect
         if (data.explanation) {
             const explanationText = document.getElementById('explanation-text');
-            if (!explanationText) {
-                console.error("Element with ID 'explanation-text' not found");
-            } else {
-                const summary = data.explanation.summary || '';
-                explanationText.textContent = '';
-                
-                let charIndex = 0;
-                const typingInterval = setInterval(() => {
-                    if (charIndex < summary.length) {
-                        explanationText.textContent += summary.charAt(charIndex);
-                        charIndex++;
-                    } else {
-                        clearInterval(typingInterval);
-                    }
-                }, 10);
-            }
+            const summary = data.explanation.summary;
+            explanationText.textContent = '';
+            
+            let charIndex = 0;
+            const typingInterval = setInterval(() => {
+                if (charIndex < summary.length) {
+                    explanationText.textContent += summary.charAt(charIndex);
+                    charIndex++;
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 10);
             
             // Update linguistic analysis with animation
             updateLinguisticMarkers('fake-markers-content', data.explanation.linguistic_analysis.fake_news_markers);
@@ -254,17 +236,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update verification tips with animation
             const tipsList = document.getElementById('verification-tips');
-            if (tipsList && data.explanation.verification_tips) {
-                tipsList.innerHTML = '';
-                
-                data.explanation.verification_tips.forEach((tip, index) => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item verification-tip animate-slide-in';
-                    li.style.animationDelay = (index * 100) + 'ms';
-                    li.textContent = tip;
-                    tipsList.appendChild(li);
-                });
-            }
+            tipsList.innerHTML = '';
+            
+            data.explanation.verification_tips.forEach((tip, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item verification-tip animate-slide-in';
+                li.style.animationDelay = (index * 100) + 'ms';
+                li.textContent = tip;
+                tipsList.appendChild(li);
+            });
         }
         
         // Update source verification if available
@@ -275,33 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update source verification section
     function updateSourceVerification(data) {
-        // Check if the element exists first
-        let sourceVerificationDiv = document.getElementById('source-verification');
-        if (!sourceVerificationDiv) {
-            // Create the element if it doesn't exist
-            const resultsDiv = document.getElementById('results');
-            if (resultsDiv) {
-                const newDiv = document.createElement('div');
-                newDiv.id = 'source-verification';
-                newDiv.className = 'mt-4';
-                
-                // Find the card in the results section and append to it
-                const resultCard = resultsDiv.querySelector('.card-body');
-                if (resultCard) {
-                    resultCard.appendChild(newDiv);
-                } else {
-                    // Fallback - append to results div
-                    resultsDiv.appendChild(newDiv);
-                }
-                
-                // Now get the newly created element
-                sourceVerificationDiv = document.getElementById('source-verification');
-            } else {
-                // If we can't find the results div, log an error and return
-                console.error('Results div not found, cannot create source verification section');
-                return;
-            }
-        }
+        const sourceVerificationDiv = document.getElementById('source-verification');
         
         // Clear previous content
         sourceVerificationDiv.innerHTML = '';
@@ -384,10 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update linguistic markers
     function updateLinguisticMarkers(elementId, markers) {
         const container = document.getElementById(elementId);
-        if (!container) {
-            console.error(`Element with ID "${elementId}" not found`);
-            return;
-        }
         container.innerHTML = '';
         
         if (Object.keys(markers).length === 0) {

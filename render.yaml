@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: fake-news-detection
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --chdir src app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+      - key: FLASK_ENV
+        value: production
+      - key: API_KEY
+        sync: false
