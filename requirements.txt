@@ -13,3 +13,4 @@ beautifulsoup4>=4.9.3
 lxml>=4.6.3
 gunicorn>=21.2.0
 python-dotenv>=1.0.0
+GoogleNews>=1.6.0
